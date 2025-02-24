@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id        Int       @unique @default(autoincrement())
+  name      String    @db.VarChar()
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt()
+  deletedAt DateTime? @db.Timestamp()
+
+  Permission Permission[]
+  User       User[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id         Int     @unique @default(autoincrement())
+  role       Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId     Int     @db.Integer()
+  action     String  @db.VarChar()
+  subject    String  @db.VarChar()
+  inverted   Boolean @default(false)
+  conditions Json?   @db.JsonB()
+  reason     String? @db.Text()
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt()
+  deletedAt DateTime? @db.Timestamp()
+
+  @@map("permissions")
+}
+
+model User {
+  id           Int     @unique @default(autoincrement())
+  firstName    String  @db.VarChar(100)
+  lastName     String? @db.VarChar(100)
+  email        String  @unique @db.VarChar(255)
+  password     String
+  refreshToken String?
+
+  role   Role @relation(fields: [roleId], references: [id], onDelete: SetDefault)
+  roleId Int  @default(2) @db.Integer()
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt()
+  deletedAt DateTime? @db.Timestamp()
+  Story     Story[]   @relation("created_user")
+  Article   Article[]
+
+  @@map("users")
+}
+
+model Story {
+  id   Int    @unique @default(autoincrement())
+  name String @db.VarChar()
+
+  createdUser User      @relation(name: "created_user", fields: [createdBy], references: [id])
+  createdBy   Int       @db.Integer()
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt()
+  deletedAt   DateTime? @db.Timestamp()
+
+  @@map("stories")
+}
+
+model Article {
+  id          Int     @unique @default(autoincrement())
+  isPublished Boolean @default(false)
+  author      User    @relation(fields: [authorId], references: [id])
+  authorId    Int     @db.Integer()
+
+  @@map("articles")
+}

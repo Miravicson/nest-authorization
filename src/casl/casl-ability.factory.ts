@@ -7,6 +7,7 @@ import { createPrismaAbility, PrismaQuery, Subjects } from '@casl/prisma';
 import { PrismaService } from '../prisma/prisma.service';
 import size from 'lodash/size';
 import get from 'lodash/get';
+import { AuthenticatedUser } from 'src/auth/types';
 
 export type AppSubjects =
   | 'all'
@@ -34,7 +35,7 @@ export class CaslAbilityFactory {
     });
   }
 
-  async createUserAbility(user: User) {
+  async createUserAbility(user: AuthenticatedUser) {
     const userPermissions = await this.prisma.permission.findMany({
       where: {
         roleId: user.roleId,

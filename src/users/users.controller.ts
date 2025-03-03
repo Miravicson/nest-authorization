@@ -12,7 +12,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { PoliciesGuard } from '../casl/policies.guard';
+import { PoliciesGuard } from '../auth/guards/policies.guard';
 import { CheckPolicies } from '../casl/check-policies.decorator';
 
 import { PolicyHandlers } from '../casl/policy-handler';
@@ -39,7 +39,10 @@ export class UsersController {
   }
 
   @Patch(':id')
-  update(@Param('id', new ParseIntPipe()) id: number, @Body() updateUserDto: UpdateUserDto) {
+  update(
+    @Param('id', new ParseIntPipe()) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     return this.usersService.update({ id }, updateUserDto);
   }
 

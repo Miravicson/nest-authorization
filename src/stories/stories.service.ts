@@ -7,7 +7,10 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class StoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createStoryDto: Omit<Prisma.StoryCreateInput, 'createdUser'>, userId: number) {
+  async create(
+    createStoryDto: Omit<Prisma.StoryCreateInput, 'createdUser'>,
+    userId: number,
+  ) {
     return await this.prisma.story.create({
       data: { ...createStoryDto, createdUser: { connect: { id: userId } } },
     });

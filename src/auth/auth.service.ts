@@ -72,19 +72,22 @@ export class AuthService {
 
   async signIn({
     user,
-    impersonatedUser,
+    userToImpersonate,
     response,
   }: {
     user: AuthenticatedUser;
-    impersonatedUser?: AuthenticatedUser;
+    userToImpersonate?: AuthenticatedUser;
     response: Response;
   }): Promise<SignInResponse> {
     const result = {} as SignInResponse;
     const jwtPayload: AccessTokenPayload = {
       sub: user.id,
-      email: user.email,
       iat: Date.now(),
     };
+
+    if (userToImpersonate) {
+      jwtPayload.impersonatedSub = userToImpersonate.id;
+    }
 
     result.accessToken = await this.jwtService.signAsync(jwtPayload);
     result.refreshToken = await this.jwtService.signAsync(jwtPayload, {
@@ -96,18 +99,6 @@ export class AuthService {
       { id: user.id },
       { refreshToken: await hashPassWord(result.refreshToken) },
     );
-
-    if (impersonatedUser) {
-      result.impersonatedUserAccessToken =
-        await this.jwtService.signAsync(impersonatedUser);
-
-      this.setJwtCookie({
-        response,
-        cookieKey: AuthCookieKey.IMPERSONATED_USER_JWT_TOKEN,
-        token: result.impersonatedUserAccessToken,
-        expiresIn: this.securityConfig.jwtExpiresIn,
-      });
-    }
 
     this.setJwtCookie({
       response,
@@ -126,20 +117,39 @@ export class AuthService {
 
   async impersonateUser(
     options: {
-      impersonatedUserId: number;
+      userToImpersonateId: number;
       user: AuthenticatedUser;
     },
     response: Response,
   ) {
-    const { impersonatedUserId, user } = options;
-    const impersonatedUser =
-      await this.usersService.findOne(impersonatedUserId);
-    if (!impersonatedUser) {
+    const { userToImpersonateId, user } = options;
+    const userToImpersonate =
+      await this.usersService.findOne(userToImpersonateId);
+    if (!userToImpersonate) {
       throw new UnauthorizedException(
-        `Could not find user with id ${impersonatedUserId}`,
+        `Could not find user with id ${userToImpersonateId}`,
       );
     }
-    return await this.signIn({ user, impersonatedUser, response });
+    return await this.signIn({
+      user,
+      userToImpersonate,
+      response,
+    });
+  }
+
+  async stopImpersonation(impersonatedById: number, response: Response) {
+    const impersonatingUser = await this.usersService.findOne(impersonatedById);
+
+    if (!impersonatingUser) {
+      throw new UnauthorizedException(
+        'You are not allowed to stop impersonation',
+      );
+    }
+
+    return await this.signIn({
+      user: impersonatingUser,
+      response,
+    });
   }
 
   async signup(
@@ -169,13 +179,6 @@ export class AuthService {
 
   async logout(user: AuthenticatedUser, response: Response) {
     await this.usersService.update({ id: user.id }, { refreshToken: null });
-    this.setJwtCookie({
-      response,
-      cookieKey: AuthCookieKey.IMPERSONATED_USER_JWT_TOKEN,
-      token: '',
-      expiresIn: this.securityConfig.jwtExpiresIn,
-      maxAge: 0,
-    });
     this.setJwtCookie({
       response,
       cookieKey: AuthCookieKey.JWT_TOKEN,

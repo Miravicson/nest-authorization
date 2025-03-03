@@ -11,7 +11,5 @@ export const AuthStrategyName = {
 export type AuthCookieKey = SnakeToHyphen<keyof typeof AuthCookieKey>;
 export const AuthCookieKey = {
   JWT_TOKEN: 'jwt-token',
-  IMPERSONATED_USER_JWT_TOKEN: 'impersonated-user-jwt-token',
   JWT_REFRESH_TOKEN: 'refresh-token',
 } as const;
-

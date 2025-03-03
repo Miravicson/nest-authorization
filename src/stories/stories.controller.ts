@@ -12,7 +12,7 @@ import {
 import { StoriesService } from './stories.service';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { UpdateStoryDto } from './dto/update-story.dto';
-import { PoliciesGuard } from '../casl/policies.guard';
+import { PoliciesGuard } from '../auth/guards/policies.guard';
 import { CheckPolicies } from '../casl/check-policies.decorator';
 import { PolicyHandlers } from '../casl/policy-handler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -28,7 +28,10 @@ export class StoriesController {
   @UseGuards(JwtAuthGuard, PoliciesGuard)
   @ApiBearerAuth()
   @Post()
-  create(@Body() createStoryDto: CreateStoryDto, @CurrentUser() user: AuthenticatedUser) {
+  create(
+    @Body() createStoryDto: CreateStoryDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.storiesService.create(createStoryDto, user.id);
   }
 

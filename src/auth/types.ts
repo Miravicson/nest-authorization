@@ -3,8 +3,7 @@ import { User } from '@prisma/client';
 
 export interface AccessTokenPayload {
   sub: number;
-  email: string;
-  impersonatedUserEmail?: string;
+  impersonatedSub?: number;
   iat: number;
   exp?: number;
 }
@@ -15,19 +14,12 @@ export interface SignInResponse {
   impersonatedUserAccessToken?: string;
 }
 
-export type AuthenticatedUser = Omit<User, 'password'>;
-
-export interface SessionRequest extends Request {
-  user: AuthenticatedSession;
-  session?: AuthenticatedSession;
+export interface AuthenticatedUser extends Omit<User, 'password'> {
+  isImpersonated?: boolean;
+  impersonatedBy?: number;
 }
 
 export interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
   cookies: Record<string, string>;
 }
-
-export type AuthenticatedSession = {
-  impersonatedUser: AuthenticatedUser;
-  loggedInUser: AuthenticatedUser;
-};

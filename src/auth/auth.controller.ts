@@ -1,9 +1,4 @@
-import {
-  ApiBearerAuth,
-  ApiCookieAuth,
-  ApiNoContentResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -11,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -24,7 +18,7 @@ import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { ImpersonateUserDto } from './dto/impersonate-user.dto';
-import { PoliciesGuard } from '../casl/policies.guard';
+import { PoliciesGuard } from './guards/policies.guard';
 import { CheckPolicies } from '../casl/check-policies.decorator';
 import { PolicyHandlers } from '../casl/policy-handler';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh-auth.guard';
@@ -56,7 +50,6 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  @ApiCookieAuth()
   @HttpCode(HttpStatus.OK)
   async login(
     @CurrentUser() user: AuthenticatedUser,
@@ -77,9 +70,22 @@ export class AuthController {
   ) {
     return await this.authService.impersonateUser(
       {
-        impersonatedUserId: dto.impersonateUserId,
+        userToImpersonateId: dto.impersonateUserId,
         user,
       },
+      response,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, PoliciesGuard)
+  @ApiBearerAuth()
+  @Post('stop-impersonation')
+  async stopImpersonation(
+    @CurrentUser() user: AuthenticatedUser,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return await this.authService.stopImpersonation(
+      user.impersonatedBy,
       response,
     );
   }
@@ -110,6 +116,6 @@ export class AuthController {
     @CurrentUser() user: AuthenticatedUser,
     @Res({ passthrough: true }) response: Response,
   ): Promise<any> {
-    this.authService.logout(user, response);
+    await this.authService.logout(user, response);
   }
 }

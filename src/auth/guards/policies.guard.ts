@@ -1,16 +1,19 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 
 import { Reflector } from '@nestjs/core';
-import { AppAbility, CaslAbilityFactory } from './casl-ability.factory';
-import { PolicyHandler } from './policy-handler';
-import { SetMetadataKeyEnum } from '../auth/set-metadata-key.enum';
-import { User } from '@prisma/client';
+import {
+  AppAbility,
+  CaslAbilityFactory,
+} from '../../casl/casl-ability.factory';
+import { PolicyHandler } from '../../casl/policy-handler';
+import { SetMetadataKeyEnum } from '../set-metadata-key.enum';
+import { AuthenticatedRequest } from 'src/auth/types';
 
 @Injectable()
 export class PoliciesGuard implements CanActivate {
   constructor(
-    private reflector: Reflector,
-    private caslAbilityFactory: CaslAbilityFactory,
+    private readonly reflector: Reflector,
+    private readonly caslAbilityFactory: CaslAbilityFactory,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -20,9 +23,9 @@ export class PoliciesGuard implements CanActivate {
         context.getHandler(),
       ) || [];
 
-    const currentUser: User = context.switchToHttp().getRequest().user as User;
-    const ability =
-      await this.caslAbilityFactory.createUserAbility(currentUser);
+    const user = context.switchToHttp().getRequest<AuthenticatedRequest>().user;
+
+    const ability = await this.caslAbilityFactory.createUserAbility(user);
 
     return policyHandlers.every((handler) => {
       return this.execPolicyHandler(handler, ability);
